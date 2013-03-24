@@ -1,0 +1,92 @@
+NAME
+    Validation::Class::Deep - Data Validation for Hierarchical Data
+
+VERSION
+    version 0.000006
+
+SYNOPSIS
+        package MyApp::Person;
+
+        use Validation::Class::Deep;
+
+        field  'id' => {
+            mixin      => [':str'],
+            filters    => ['numeric'],
+            max_length => 2,
+        };
+
+        field  'name' => {
+            mixin      => [':str'],
+            pattern    => qr/^[A-Za-z ]+$/,
+            max_length => 20,
+        };
+
+        field  'rating' => {
+            mixin      => [':str'],
+            pattern    => qr/^\-?\d+$/,
+        };
+
+        field  'tag' => {
+            mixin      => [':str'],
+            pattern    => qr/^(?!evil)\w+/,
+            max_length => 20,
+        };
+
+        domain 'person' => {
+            'id'                             => 'id',
+            'name'                           => 'name',
+            'company.name'                   => 'name',
+            'company.supervisor.name'        => 'name',
+            'company.supervisor.rating.@.*'  => 'rating',
+            'company.tags.@'                 => 'name'
+        };
+
+        package main;
+
+        my $data = {
+            "id"      => "1234-ABC",
+            "name"    => "Anita Campbell-Green",
+            "title"   => "Designer",
+            "company" => {
+                "name"       => "House of de Vil",
+                "supervisor" => {
+                    "name"   => "Cruella de Vil",
+                    "rating" => [
+                        {   "support"  => -9,
+                            "guidance" => -9
+                        }
+                    ]
+                },
+                "tags" => [
+                    "evil",
+                    "cruelty",
+                    "dogs"
+                ]
+            },
+        };
+
+        my $person = MyApp::Person->new;
+
+        unless ($person->validate_domain(person => $data)) {
+            warn $person->errors_to_string if $person->error_count;
+        }
+
+DESCRIPTION
+    This module allows you to validate hierarchical structures using the
+    Validation::Class framework. This is an experimental yet highly
+    promising approach toward the consistent processing of nested
+    structures. The current interface is not expected to change. This module
+    was inspired by MooseX::Validation::Doctypes. Gone are the days of data
+    submitted to an application in key/value form and especially in regards
+    to the increasing demand for communication between applications,
+    serializing and transmitting structured data over a network connection.
+
+AUTHOR
+    Al Newkirk <anewkirk@ana.io>
+
+COPYRIGHT AND LICENSE
+    This software is copyright (c) 2013 by Al Newkirk.
+
+    This is free software; you can redistribute it and/or modify it under
+    the same terms as the Perl 5 programming language system itself.
+
